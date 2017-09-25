@@ -65,10 +65,15 @@ void main()
 		// choose
 		// set current as the first state in open list and remove it from open list
 		choose_to_go();
+		
 		// goal test
 		// if current = goal, stop 
 		if (is_same(current, goal) == 1)
 			break;
+
+		generate_children(current);
+
+
 
 		// expand
 		// generate next states, check open and closed list, and insert children into open list
@@ -109,24 +114,26 @@ void generate_children(STATE *s)
 
 	for (i = 0; i<SIZE; i++)
 		if (s->board[i] == 'x') blank = i;	// position of x
-	row = blank / SIDE;
-	col = blank % SIDE;
+	row = blank / SIDE; // 행
+	col = blank % SIDE;//열
 
-	// down 
+	// down 맨 아래가 아니라면 child 는 
 	if (row != SIDE - 1) {
 		child[0] = (STATE *)malloc(sizeof(STATE));
-		*child[0] = *s;
-		child[0]->board[blank] = child[0]->board[blank + SIDE];
+		*child[0] = *s;//매개변수로 들어온 보드에서 
+		child[0]->board[blank] = child[0]->board[blank + SIDE]; 
 		child[0]->board[blank + SIDE] = 'x';
+		//x랑 side만큼 추가한 index의 위치를 바꿔줌 ( down)
 	}
-	// right 
+	// right 제일 오른쪽이 아니라면
 	if (col != SIDE - 1) {
 		child[1] = (STATE *)malloc(sizeof(STATE));
 		*child[1] = *s;
 		child[1]->board[blank] = child[1]->board[blank + 1];
 		child[1]->board[blank + 1] = 'x';
+		//x를 1만큼 추가한것과 바꿔줌 ( right)
 	}
-	// up 
+	// up //나머지 위와 동일
 	if (row != 0) {
 		child[2] = (STATE *)malloc(sizeof(STATE));
 		*child[2] = *s;
@@ -142,12 +149,14 @@ void generate_children(STATE *s)
 	}
 
 	for (i = 0; i<4; i++) {
-		if (child[i]) {
+		if (child[i]) {//child 값 있으면
 			if ((s->parent != NULL) && (is_same(child[i], s->parent))) {
+				//parent가 null이 아니면서  
+				//child 와 parent가 같다면 ( 즉 이전 state 라면 ) 그냥 free child , null 넣어줌
 				free(child[i]);
 				child[i] = NULL;
 			}
-			else {
+			else {//그게 아니라면 연결
 				child[i]->parent = s;
 				child[i]->g = s->g + 1;
 				child[i]->h = compute_h(child[i]);
