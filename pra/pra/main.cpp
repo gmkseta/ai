@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <conio.h>
-
+#include <string.h>
 #define SIDE		3
 #define SIZE	  	SIDE * SIDE		// board size
 
@@ -41,12 +41,15 @@ void main()
 
 	// input start state (ex> 1238x4765) 
 	printf("\n\n Start position : ");
-	scanf("%s", str);
+	//scanf("%s", str);
+	strcpy_s(str, 10, "1234X5678");
+
 	for (i = 0; i<SIZE; i++) start->board[i] = str[i];
 
+	strcpy_s(str, 10, "2345X6781");
 	// input goal state 
 	printf("\n Goal position :  ");
-	scanf("%s", str);
+	//scanf("%s", str);
 	for (i = 0; i<SIZE; i++) goal->board[i] = str[i];
 
 	start->parent = NULL;
@@ -55,28 +58,27 @@ void main()
 	start->f = start->g + start->h;
 
 	// A* search ///히익
+	//일단 open_prt에다가 start 넣어줌 첫 state를 넣어주는드
 	insert(open_ptr, start);
+	//여기 open_ptr ->next에 start가 들어가네
 
 	while (open_ptr->next != NULL){
 		printf(".");
-		state_count++;
+		state_count++;//한번 갈때마다 state_count 를 하나씩 올려줌
 
 		// choose
 		// set current as the first state in open list and remove it from open list
-		choose_to_go();
+		choose_to_go();//open list에서 가장 첫번째 스테이트를 current에다가 넣고 remove 해줌
 		
 		// goal test
 		// if current = goal, stop 
-		if (is_same(current, goal) == 1)
+		if (is_same(current, goal) == 1)//골인지 확인함/ 맞으면 break
 			break;
 
-		expand_next(current);
-
-		
-
+		//만약 아니라면 다음 child들을 확장하여 넣고 open과 close를 확인하여 이미 있는거라면 없애고 아니라면 openlist에 넣어줌
 		// expand
 		// generate next states, check open and closed list, and insert children into open list
-
+		expand_next(current);
 
 	}
 
@@ -117,10 +119,10 @@ void expand_next(STATE *s) {
 void choose_to_go()
 {
 	//최근목록으로 넣고
-	current = open_ptr;
+	current = open_ptr->next;
 
 	//열린목록에서 지움
-	open_ptr = open_ptr->next;
+	open_ptr->next = open_ptr->next->next;
 
 	
 }
@@ -132,7 +134,7 @@ void generate_children(STATE *s)
 	for (i = 0; i<4; i++) child[i] = NULL;
 
 	for (i = 0; i<SIZE; i++)
-		if (s->board[i] == 'x') blank = i;	// position of x
+		if (s->board[i] == 'x'|| s->board[i] == 'X') blank = i;	// position of x
 	row = blank / SIDE; // 행
 	col = blank % SIDE;//열
 
@@ -209,16 +211,20 @@ int check_open(STATE *s)
 {
 	STATE* temp;
 	temp = open_ptr;
-
 	while (temp->next)
 	{
 		if (is_same(s, temp))
 		{
-			if (s->f < temp->f);
+			if (s->f < temp->f)
+			{
+				insert(open_ptr, s);
+				temp->parent->next = temp->next;
+				temp->next->parent = temp->parent;
+				return 1;
+			}
 		}
+		temp->next = temp->next->next;
 	}
-
-
 	// for each state n in open list
 	// if s = n and f(s) < f(n), update n, return 1
 	// if s is not in open list, return 0
@@ -229,7 +235,23 @@ int check_open(STATE *s)
 // if so, change f(s) value and insert s back to OPEN
 int check_closed(STATE *s)
 {
+	STATE* temp;
+	temp = closed_ptr;
+	while (temp->next)
+	{
+		if (is_same(s, temp))
+		{
+			if (s->f < temp->f)
+			{
+				insert(open_ptr, s);
+				temp->parent->next = temp->next;
+				temp->next->parent = temp->parent;
+				return 1;
+			}
+		}
 
+		temp->next = temp->next->next;
+	}
 	// for each state n in closed list
 	// if s = n and f(s) < f(n), 
 	// remove n from closed list, insert s into open list, return 1
@@ -258,7 +280,9 @@ void insert(STATE *l, STATE *s)
 		l = l->next;
 	}
 	s->next = l->next; // s 다음노드에 i next 를 넣고
-	l->next = s;// i next 에다가는 s를 넣음 
+	l->next = s;// i next 에다가는 s를 넣음 	
+	while (l->parent != NULL)
+		l = l->parent;
 }
 
 // print solution by display states sequentially from Start to Goal
