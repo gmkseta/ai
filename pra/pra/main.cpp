@@ -54,13 +54,12 @@ void main()
 	start->h = compute_h(start);
 	start->f = start->g + start->h;
 
-	// A* search ///ÇÏ¾Ç
+	// A* search ///È÷ÀÍ
 	insert(open_ptr, start);
 
-	while (open_ptr->next != NULL) {
+	while (open_ptr->next != NULL){
 		printf(".");
 		state_count++;
-
 
 		// choose
 		// set current as the first state in open list and remove it from open list
@@ -71,9 +70,9 @@ void main()
 		if (is_same(current, goal) == 1)
 			break;
 
-		generate_children(current);
+		expand_next(current);
 
-
+		
 
 		// expand
 		// generate next states, check open and closed list, and insert children into open list
@@ -94,6 +93,26 @@ void main()
 void expand_next(STATE *s) {
 	generate_children(s);
 
+	for (int i = 0; i < 4; i++)
+	{
+		if (child[i])
+		{
+			if (check_open(child[i]))
+			{
+				free(child[i]);
+				child[i] = NULL;
+			}
+			else if (check_closed(child[i]))
+			{
+				free(child[i]);
+				child[i] = NULL;
+			}
+			else
+			{
+				insert(open_ptr, child[i]);
+			}
+		}
+	}
 }
 void choose_to_go()
 {
@@ -188,6 +207,17 @@ int compute_h(STATE *s)
 // if so, change f(s) value and return TRUE
 int check_open(STATE *s)
 {
+	STATE* temp;
+	temp = open_ptr;
+
+	while (temp->next)
+	{
+		if (is_same(s, temp))
+		{
+			if (s->f < temp->f);
+		}
+	}
+
 
 	// for each state n in open list
 	// if s = n and f(s) < f(n), update n, return 1
@@ -195,7 +225,6 @@ int check_open(STATE *s)
 	return 0;
 
 }
-
 // check whether s is in CLOSED and f(s) is smaller
 // if so, change f(s) value and insert s back to OPEN
 int check_closed(STATE *s)
