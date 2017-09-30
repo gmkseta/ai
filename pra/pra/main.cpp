@@ -34,6 +34,8 @@ void print_board(STATE *s);
 void print_solution(STATE *s);
 void choose_to_go();
 void expand_next(STATE *s);
+STATE* copy_state(STATE *s);
+
 void main()
 {
 	char str[10];
@@ -218,12 +220,11 @@ int check_open(STATE *s)
 			if (s->f < temp->f)
 			{
 				insert(open_ptr, s);
-				temp->parent->next = temp->next;
-				temp->next->parent = temp->parent;
+				
 				return 1;
 			}
 		}
-		temp->next = temp->next->next;
+		temp = temp->next;
 	}
 	// for each state n in open list
 	// if s = n and f(s) < f(n), update n, return 1
@@ -244,13 +245,11 @@ int check_closed(STATE *s)
 			if (s->f < temp->f)
 			{
 				insert(open_ptr, s);
-				temp->parent->next = temp->next;
-				temp->next->parent = temp->parent;
 				return 1;
 			}
 		}
 
-		temp->next = temp->next->next;
+		temp = temp->next;
 	}
 	// for each state n in closed list
 	// if s = n and f(s) < f(n), 
@@ -271,23 +270,35 @@ int is_same(STATE *s1, STATE *s2)
 	}
 	return (1);
 }
+STATE* copy_state(STATE *s)
+{
+	STATE *temp;
+	temp = (STATE *)malloc(sizeof(STATE));
+	temp->parent = s->parent;
+	temp->f = s->f;
+	temp->g = s->g;
+	temp->h = s->h;
+	temp->next = NULL;
+	for (int i = 0; i < SIZE; i++)
+	{
+		temp->board[i] = s->board[i];
+	}
 
+}
 // insert state s to list l. list l is in sorted order
 void insert(STATE *l, STATE *s)
 {
+
+	STATE *temp;
+
 	while (l->next != NULL) {
-		if (s->f < l->next->f) break;// i 다음 노드의 f가  s의 f보다  더 크면 반복문을 나옴 근데 맨첨에는 여기 안들어오는데 흠 .
+		if (s->f < l->next->f) break;
 		l = l->next;
 	}
-	s->next = l->next; // s 다음노드에 i next 를 넣고
-	s->parent = l;
-	l->next->parent = s;
+	temp = copy_state(s);
+	temp->next = l->next;
+	l->next = temp;
 
-	l->next = s;// i next 에다가는 s를 넣음
-	
-
-	while (l->parent != NULL)
-		l = l->parent;
 }
 
 // print solution by display states sequentially from Start to Goal
