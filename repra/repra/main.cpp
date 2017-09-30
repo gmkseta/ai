@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <conio.h>
-#include <string.h>
+
 #define SIDE		3
 #define SIZE	  	SIDE * SIDE		// board size
 
@@ -32,8 +32,7 @@ int is_same(STATE *s1, STATE *s2);
 void insert(STATE *l, STATE *s);
 void print_board(STATE *s);
 void print_solution(STATE *s);
-void choose_to_go();
-void expand_next(STATE *s);
+
 void main()
 {
 	char str[10];
@@ -41,15 +40,12 @@ void main()
 
 	// input start state (ex> 1238x4765) 
 	printf("\n\n Start position : ");
-	//scanf("%s", str);
-	strcpy_s(str, 10, "1234X5678");
-
+	scanf("%s", str);
 	for (i = 0; i<SIZE; i++) start->board[i] = str[i];
 
-	strcpy_s(str, 10, "2345X6781");
 	// input goal state 
 	printf("\n Goal position :  ");
-	//scanf("%s", str);
+	scanf("%s", str);
 	for (i = 0; i<SIZE; i++) goal->board[i] = str[i];
 
 	start->parent = NULL;
@@ -57,28 +53,20 @@ void main()
 	start->h = compute_h(start);
 	start->f = start->g + start->h;
 
-	// A* search ///히익
-	//일단 open_prt에다가 start 넣어줌 첫 state를 넣어주는드
+	// A* search 
 	insert(open_ptr, start);
-	//여기 open_ptr ->next에 start가 들어가네
-
-	while (open_ptr->next != NULL){
+	while (open_ptr->next != NULL) {
 		printf(".");
-		state_count++;//한번 갈때마다 state_count 를 하나씩 올려줌
+		state_count++;
 
 		// choose
 		// set current as the first state in open list and remove it from open list
-		choose_to_go();//open list에서 가장 첫번째 스테이트를 current에다가 넣고 remove 해줌
-		
+
 		// goal test
 		// if current = goal, stop 
-		if (is_same(current, goal) == 1)//골인지 확인함/ 맞으면 break
-			break;
 
-		//만약 아니라면 다음 child들을 확장하여 넣고 open과 close를 확인하여 이미 있는거라면 없애고 아니라면 openlist에 넣어줌
 		// expand
 		// generate next states, check open and closed list, and insert children into open list
-		expand_next(current);
 
 	}
 
@@ -92,40 +80,7 @@ void main()
 	getchar();
 
 }
-void expand_next(STATE *s) {
-	generate_children(s);
 
-	for (int i = 0; i < 4; i++)
-	{
-		if (child[i])
-		{
-			if (check_open(child[i]))
-			{
-				free(child[i]);
-				child[i] = NULL;
-			}
-			else if (check_closed(child[i]))
-			{
-				free(child[i]);
-				child[i] = NULL;
-			}
-			else
-			{
-				insert(open_ptr, child[i]);
-			}
-		}
-	}
-}
-void choose_to_go()
-{
-	//최근목록으로 넣고
-	current = open_ptr->next;
-
-	//열린목록에서 지움
-	open_ptr->next = open_ptr->next->next;
-
-	
-}
 // generate next states (child[i]) of s
 void generate_children(STATE *s)
 {
@@ -134,27 +89,25 @@ void generate_children(STATE *s)
 	for (i = 0; i<4; i++) child[i] = NULL;
 
 	for (i = 0; i<SIZE; i++)
-		if (s->board[i] == 'x'|| s->board[i] == 'X') blank = i;	// position of x
-	row = blank / SIDE; // 행
-	col = blank % SIDE;//열
+		if (s->board[i] == 'x') blank = i;	// position of x
+	row = blank / SIDE;
+	col = blank % SIDE;
 
-	// down 맨 아래가 아니라면 child 는 
+	// down 
 	if (row != SIDE - 1) {
 		child[0] = (STATE *)malloc(sizeof(STATE));
-		*child[0] = *s;//매개변수로 들어온 보드에서 
-		child[0]->board[blank] = child[0]->board[blank + SIDE]; 
+		*child[0] = *s;
+		child[0]->board[blank] = child[0]->board[blank + SIDE];
 		child[0]->board[blank + SIDE] = 'x';
-		//x랑 side만큼 추가한 index의 위치를 바꿔줌 ( down)
 	}
-	// right 제일 오른쪽이 아니라면
+	// right 
 	if (col != SIDE - 1) {
 		child[1] = (STATE *)malloc(sizeof(STATE));
 		*child[1] = *s;
 		child[1]->board[blank] = child[1]->board[blank + 1];
 		child[1]->board[blank + 1] = 'x';
-		//x를 1만큼 추가한것과 바꿔줌 ( right)
 	}
-	// up //나머지 위와 동일
+	// up 
 	if (row != 0) {
 		child[2] = (STATE *)malloc(sizeof(STATE));
 		*child[2] = *s;
@@ -170,14 +123,12 @@ void generate_children(STATE *s)
 	}
 
 	for (i = 0; i<4; i++) {
-		if (child[i]) {//child 값 있으면
+		if (child[i]) {
 			if ((s->parent != NULL) && (is_same(child[i], s->parent))) {
-				//parent가 null이 아니면서  
-				//child 와 parent가 같다면 ( 즉 이전 state 라면 ) 그냥 free child , null 넣어줌
 				free(child[i]);
 				child[i] = NULL;
 			}
-			else {//그게 아니라면 연결
+			else {
 				child[i]->parent = s;
 				child[i]->g = s->g + 1;
 				child[i]->h = compute_h(child[i]);
@@ -190,18 +141,9 @@ void generate_children(STATE *s)
 // compute heuristic value h of state s
 int compute_h(STATE *s)
 {
-	//SJ
-	//우선 가장 간단하게 골과 몇개가 차이 나는지 비교하는 함수로.
-	int size = sizeof(s->board) / sizeof(s->board[0]);
-	int count = 0;
-	for (int i = 0; i < size; i++) {
-		if (goal->board[i] == s->board[i])
-			count++;
-	}
-	s->h = count;
+
 	// estimated distance from s to Goal
 	// ex> number of tiles out of place
-	return 0;
 
 }
 
@@ -209,54 +151,22 @@ int compute_h(STATE *s)
 // if so, change f(s) value and return TRUE
 int check_open(STATE *s)
 {
-	STATE* temp;
-	temp = open_ptr;
-	while (temp->next)
-	{
-		if (is_same(s, temp))
-		{
-			if (s->f < temp->f)
-			{
-				insert(open_ptr, s);
-				temp->parent->next = temp->next;
-				temp->next->parent = temp->parent;
-				return 1;
-			}
-		}
-		temp->next = temp->next->next;
-	}
+
 	// for each state n in open list
 	// if s = n and f(s) < f(n), update n, return 1
 	// if s is not in open list, return 0
-	return 0;
 
 }
+
 // check whether s is in CLOSED and f(s) is smaller
 // if so, change f(s) value and insert s back to OPEN
 int check_closed(STATE *s)
 {
-	STATE* temp;
-	temp = closed_ptr;
-	while (temp->next)
-	{
-		if (is_same(s, temp))
-		{
-			if (s->f < temp->f)
-			{
-				insert(open_ptr, s);
-				temp->parent->next = temp->next;
-				temp->next->parent = temp->parent;
-				return 1;
-			}
-		}
 
-		temp->next = temp->next->next;
-	}
 	// for each state n in closed list
 	// if s = n and f(s) < f(n), 
 	// remove n from closed list, insert s into open list, return 1
 	// if s is not in closed list, return 0
-	return 0;
 
 }
 
@@ -276,18 +186,11 @@ int is_same(STATE *s1, STATE *s2)
 void insert(STATE *l, STATE *s)
 {
 	while (l->next != NULL) {
-		if (s->f < l->next->f) break;// i 다음 노드의 f가  s의 f보다  더 크면 반복문을 나옴 근데 맨첨에는 여기 안들어오는데 흠 .
+		if (s->f < l->next->f) break;
 		l = l->next;
 	}
-	s->next = l->next; // s 다음노드에 i next 를 넣고
-	s->parent = l;
-	l->next->parent = s;
-
-	l->next = s;// i next 에다가는 s를 넣음
-	
-
-	while (l->parent != NULL)
-		l = l->parent;
+	s->next = l->next;
+	l->next = s;
 }
 
 // print solution by display states sequentially from Start to Goal
