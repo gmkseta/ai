@@ -36,6 +36,7 @@ void choose_to_go();
 void expand_next(STATE *s);
 STATE* copy_state(STATE *s);
 
+void print_all_board();
 void main()
 {
 	char str[10];
@@ -44,11 +45,12 @@ void main()
 	// input start state (ex> 1238x4765) 
 	printf("\n\n Start position : ");
 	//scanf("%s", str);
-	strcpy_s(str, 10, "1234X5678");
+	strcpy_s(str, 10, "2831x4765");
 
 	for (i = 0; i<SIZE; i++) start->board[i] = str[i];
 
-	strcpy_s(str, 10, "2345X6781");
+	//strcpy_s(str, 10, "283x14765");
+	strcpy_s(str, 10, "1238x4765");
 	// input goal state 
 	printf("\n Goal position :  ");
 	//scanf("%s", str);
@@ -65,6 +67,8 @@ void main()
 	//여기 open_ptr ->next에 start가 들어가네
 
 	while (open_ptr->next != NULL){
+		
+
 		printf(".");
 		state_count++;//한번 갈때마다 state_count 를 하나씩 올려줌
 
@@ -74,14 +78,19 @@ void main()
 		
 		// goal test
 		// if current = goal, stop 
-		if (is_same(current, goal) == 1)//골인지 확인함/ 맞으면 break
+		if (is_same(current, goal))//골인지 확인함/ 맞으면 break
 			break;
 
 		//만약 아니라면 다음 child들을 확장하여 넣고 open과 close를 확인하여 이미 있는거라면 없애고 아니라면 openlist에 넣어줌
 		// expand
 		// generate next states, check open and closed list, and insert children into open list
-		expand_next(current);
+		else
+		{
+			expand_next(current);
+			print_all_board();
 
+		}
+		//getch();
 	}
 
 	// display search cost and path cost
@@ -128,6 +137,7 @@ void choose_to_go()
 
 	
 }
+
 // generate next states (child[i]) of s
 void generate_children(STATE *s)
 {
@@ -195,15 +205,15 @@ int compute_h(STATE *s)
 	//SJ
 	//우선 가장 간단하게 골과 몇개가 차이 나는지 비교하는 함수로.
 	int size = sizeof(s->board) / sizeof(s->board[0]);
-	int count = 0;
+	int count = 9;
 	for (int i = 0; i < size; i++) {
 		if (goal->board[i] == s->board[i])
-			count++;
+			count--;
 	}
 	s->h = count;
 	// estimated distance from s to Goal
 	// ex> number of tiles out of place
-	return 0;
+	return count;
 
 }
 
@@ -283,18 +293,19 @@ STATE* copy_state(STATE *s)
 	{
 		temp->board[i] = s->board[i];
 	}
+	return temp;
 
 }
 // insert state s to list l. list l is in sorted order
 void insert(STATE *l, STATE *s)
 {
-
 	STATE *temp;
 
 	while (l->next != NULL) {
 		if (s->f < l->next->f) break;
 		l = l->next;
 	}
+
 	temp = copy_state(s);
 	temp->next = l->next;
 	l->next = temp;
@@ -316,13 +327,24 @@ void print_board(STATE *s)
 	int i;
 
 	//	clrscr();
-	system("cls");
-	printf("\n\n");
+	//system("cls");
+	//printf("\n\n");
 	for (i = 0; i<SIZE; i++) {
 		if (i%SIDE == 0) printf("\n");
-		if (s->board[i] == 'x') printf("  %c", ' ');
+		if (s->board[i] == 'x') printf("  %c", 'X');
 		else printf("  %c", s->board[i]);
 	}
-	printf("\n\n");
+	//printf("\n\n");
 }
 
+void print_all_board() {
+	system("cls");
+
+	printf("\n\n");
+	print_board(current);
+
+	printf("\n\n");
+	print_board(open_ptr->next);
+	printf("\ng: %d , h: %d ,f: %d", open_ptr->next->g, open_ptr->next->h,open_ptr->next->f);
+
+}
