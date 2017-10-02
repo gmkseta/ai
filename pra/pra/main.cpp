@@ -35,7 +35,7 @@ void print_solution(STATE *s);
 void choose_to_go();
 void expand_next(STATE *s);
 STATE* copy_state(STATE *s);
-
+void remove_closed(STATE *s);
 void print_all_board();
 void main()
 {
@@ -45,12 +45,12 @@ void main()
 	// input start state (ex> 1238x4765) 
 	printf("\n\n Start position : ");
 	//scanf("%s", str);
-	strcpy_s(str, 10, "2831x4765");
+	strcpy_s(str, 10, "1238x4765");
 
 	for (i = 0; i<SIZE; i++) start->board[i] = str[i];
 
 	//strcpy_s(str, 10, "283x14765");
-	strcpy_s(str, 10, "1238x4765");
+	strcpy_s(str, 10, "7816x2543");
 	// input goal state 
 	printf("\n Goal position :  ");
 	//scanf("%s", str);
@@ -146,7 +146,7 @@ void generate_children(STATE *s)
 	for (i = 0; i<4; i++) child[i] = NULL;
 
 	for (i = 0; i<SIZE; i++)
-		if (s->board[i] == 'x'|| s->board[i] == 'X') blank = i;	// position of x
+		if (s->board[i] == 'x') blank = i;	// position of x
 	row = blank / SIDE; // 행
 	col = blank % SIDE;//열
 
@@ -193,7 +193,7 @@ void generate_children(STATE *s)
 				child[i]->parent = s;
 				child[i]->g = s->g + 1;
 				child[i]->h = compute_h(child[i]);
-				child[i]->f = child[i]->g + child[i]->h;
+				child[i]->f = child[i]->g +child[i]->h;
 			}
 		}
 	}
@@ -204,16 +204,51 @@ int compute_h(STATE *s)
 {
 	//SJ
 	//우선 가장 간단하게 골과 몇개가 차이 나는지 비교하는 함수로.
-	int size = sizeof(s->board) / sizeof(s->board[0]);
-	int count = 9;
-	for (int i = 0; i < size; i++) {
-		if (goal->board[i] == s->board[i])
-			count--;
+	//int size = sizeof(s->board) / sizeof(s->board[0]);
+	//int count = 9;
+	//for (int i = 0; i < size; i++) {
+	//	if (goal->board[i] == s->board[i])
+	//		count--;
+	//}
+	//s->h = count;
+	// estimated distance from s to Goal
+	// ex> number of tiles out of place
+	//return count;
+	//BST
+	//return s->g;
+	//DST
+
+	/**2. 틀린 타일들의 맨해튼 거리 합**/  int i, row, col, count = 0;
+	//1) Goal 지점계산
+	int goalMap[SIZE] = { 0, };
+	for (i = 0; i < SIZE; i++) {
+		if (goal->board[i] != 'x') {
+			int tmp = goal->board[i] - 48;
+			goalMap[tmp] = i;
+		}
+		else goalMap[0] = i;
 	}
-	s->h = count;
+	//2) state 와 goal 의 맨해튼 거리 계산
+	for (i = 0; i < SIZE; i++) {
+		if (s->board[i] != goal->board[i]) {
+			if (s->board[i] != 'x') {
+				int tmp = s->board[i] - 48;
+				count += abs((goalMap[tmp] / SIDE) - (i / SIDE));
+				count += abs((goalMap[tmp] % SIDE) - (i%SIDE));
+			}
+			else {
+				count += abs((goalMap[0] / SIDE) - (i / SIDE));
+				count += abs((goalMap[0] % SIDE) - (i%SIDE));
+			}
+
+		}
+	}
+
+
 	// estimated distance from s to Goal
 	// ex> number of tiles out of place
 	return count;
+	//return count;
 
 }
 
@@ -231,8 +266,9 @@ int check_open(STATE *s)
 			{
 				insert(open_ptr, s);
 				
-				return 1;
 			}
+
+			return 1;
 		}
 		temp = temp->next;
 	}
@@ -242,6 +278,8 @@ int check_open(STATE *s)
 	return 0;
 
 }
+
+
 // check whether s is in CLOSED and f(s) is smaller
 // if so, change f(s) value and insert s back to OPEN
 int check_closed(STATE *s)
@@ -255,8 +293,11 @@ int check_closed(STATE *s)
 			if (s->f < temp->f)
 			{
 				insert(open_ptr, s);
-				return 1;
+				temp->parent->next = temp->next;
+				temp->next->parent = temp->parent;
+				free(temp);
 			}
+			return 1;
 		}
 
 		temp = temp->next;
@@ -299,6 +340,14 @@ STATE* copy_state(STATE *s)
 // insert state s to list l. list l is in sorted order
 void insert(STATE *l, STATE *s)
 {
+
+	while (l->next != NULL) {
+		if (s->f < l->next->f) break;
+		l = l->next;
+	}
+	s->next = l->next;
+	l->next = s;
+	/*
 	STATE *temp;
 
 	while (l->next != NULL) {
@@ -308,7 +357,7 @@ void insert(STATE *l, STATE *s)
 
 	temp = copy_state(s);
 	temp->next = l->next;
-	l->next = temp;
+	l->next = temp;*/
 
 }
 
@@ -344,7 +393,65 @@ void print_all_board() {
 	print_board(current);
 
 	printf("\n\n");
-	print_board(open_ptr->next);
-	printf("\ng: %d , h: %d ,f: %d", open_ptr->next->g, open_ptr->next->h,open_ptr->next->f);
+	STATE* temp = open_ptr;
+
+	int a = 0;
+	while (temp->next) {
+		for (int i = 0; i < 3; i++) {
+			if (temp->next->board[i] == 'x') printf("  %c", 'X');
+			else printf("  %c", temp->next->board[i]);
+		}
+		printf("    ┃    ");
+		temp = temp->next;
+		a++;
+		if (a == 10)
+			break;
+	}
+	printf("\n");
+	temp = open_ptr;
+
+	a = 0;
+	while (temp->next) {
+		for (int i = 3; i < 6; i++) {
+			if (temp->next->board[i] == 'x') printf("  %c", 'X');
+			else printf("  %c", temp->next->board[i]);
+		}
+		printf("    ┃    ");
+		temp = temp->next;
+		a++;
+		if (a == 10)
+			break;
+	}
+
+	printf("\n");
+	temp = open_ptr;
+	a = 0;
+	while (temp->next) {
+		
+		for (int i = 6; i < 9; i++) {
+			if (temp->next->board[i] == 'x') printf("  %c", 'X');
+			else printf("  %c", temp->next->board[i]);
+		}
+		printf("    ┃    ");
+		temp = temp->next;
+		a++;
+		if (a == 10)
+			break;
+	}
+	temp = open_ptr;
+	printf("\n");
+	a = 0;
+	while (temp->next) {
+		
+		printf("g:%dh:%df:%d", temp->next->g, temp->next->h, temp->next->f);
+
+		printf("    ┃    ");;
+		temp = temp->next;
+		a++;
+		if (a == 10)
+			break;
+	}
+	
+
 
 }
