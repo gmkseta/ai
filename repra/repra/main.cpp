@@ -36,6 +36,7 @@ void print_solution(STATE *s);
 void choose_current();
 void expand_next(STATE *s);
 void Search();
+void insert_DFS(STATE *l,STATE *s);
 void main()
 {
 	char str[10];
@@ -61,8 +62,6 @@ void main()
 	
 	type = 2;
 	Search();
-	//type = 1;
-	//BFS();
 
 }
 
@@ -238,6 +237,7 @@ int check_open(STATE *s)
 
 }
 
+
 // check whether s is in CLOSED and f(s) is smaller
 // if so, change f(s) value and insert s back to OPEN
 int check_closed(STATE *s)
@@ -259,6 +259,13 @@ int check_closed(STATE *s)
 				temp->next->parent = temp->parent;
 				free(temp);
 			}
+			else if(s->g < temp->g&&type == 2)
+			{
+				insert_DFS(open_ptr, s);
+				temp->parent->next = temp->next;
+				temp->next->parent = temp->parent;
+				free(temp);
+			}
 			return 1;
 		}
 
@@ -272,6 +279,17 @@ int check_closed(STATE *s)
 
 }
 
+void insert_DFS(STATE *l, STATE *s)
+{
+	while (l->next != NULL) {
+		if (s->g > l->next->g)
+			break;
+	}
+
+	s->next = l->next;
+	l->next = s;
+
+}
 // TRUE if s1 and s2 are same
 int is_same(STATE *s1, STATE *s2)
 {
