@@ -35,12 +35,7 @@ void print_board(STATE *s);
 void print_solution(STATE *s);
 void choose_current();
 void expand_next(STATE *s);
-void A_Search();
-void BFS();
-void init_node(STATE *s,STATE *HEAD);
-void init_all();
-void insert_queue(STATE *l, STATE *s);
-
+void Search();
 void main()
 {
 	char str[10];
@@ -64,15 +59,14 @@ void main()
 	start->h = compute_h(start);
 	start->f = start->g + start->h;
 	
-	type = 0;
-	//A_Search();
-	type = 1;
-	BFS();
+	type = 2;
+	Search();
+	//type = 1;
+	//BFS();
 
 }
 
-
-void BFS()
+void Search()
 {
 	int state_count = 0;
 	// A* search 
@@ -93,38 +87,8 @@ void BFS()
 		expand_next(current);
 		//getch();
 
-	}
-
-	// display search cost and path cost
-	printf("\n search cost = %d", state_count);
-	printf("\n path cost   = %d \n\n", current->g);
-	getch();
-
-	// display solution path
-	print_solution(current);
-	getch();
-}
-void A_Search()
-{
-	int state_count = 0;
-	// A* search 
-	insert(open_ptr, start);
-	while (open_ptr->next != NULL) {
-		state_count++;
-
-		// choose
-		// set current as the first state in open list and remove it from open list
-		choose_current();
-
-		// goal test
-		// if current = goal, stop 
-		if (is_same(current, goal))break;
-
-		// expand
-		// generate next states, check open and closed list, and insert children into open list
-		expand_next(current);
-		//getch();
-
+		print_board(current);
+		printf("\n%d", state_count);
 	}
 
 	// display search cost and path cost
@@ -249,6 +213,7 @@ int compute_h(STATE *s)
 	//DST
 }
 
+
 // check whether s is in OPEN and f(s) is smaller
 // if so, change f(s) value and return TRUE
 int check_open(STATE *s)
@@ -262,7 +227,7 @@ int check_open(STATE *s)
 		// if s = n and f(s) < f(n), update n, return 1
 		if (is_same(s, temp))
 		{
-			if (s->f < temp->f)
+			if (s->f < temp->f&&type == 0)
 				insert(open_ptr, s);
 			return 1;
 		}
@@ -287,7 +252,7 @@ int check_closed(STATE *s)
 	{
 		if (is_same(s, temp))
 		{
-			if (s->f < temp->f)
+			if (s->f < temp->f&&type==0)
 			{
 				insert(open_ptr, s);
 				temp->parent->next = temp->next;
@@ -333,14 +298,17 @@ void insert(STATE *l, STATE *s)
 	}
 	else if (type == 1)
 	{
-		while (l->next != NULL)
-		{
-			if (s->g < l->next->g)break;
-			l = l->next;
-		}
-		
-
+		while (l->next != NULL)l = l->next;
+		s->next = l->next;
+		l->next = s;
 	}
+	else if (type == 2)
+	{
+		s->next = l->next;
+		l->next = s;
+		
+	}
+
 }
 
 // print solution by display states sequentially from Start to Goal
