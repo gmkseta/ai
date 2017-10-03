@@ -22,6 +22,7 @@ STATE STARTSTATE, GOALSTATE;		// Start and Goal states
 
 STATE *open_ptr = &OPEN, *closed_ptr = &CLOSED;
 STATE *start = &STARTSTATE, *goal = &GOALSTATE, *current, *child[4];
+int type = 0;
 
 // functions
 void generate_children(STATE *s);
@@ -34,10 +35,16 @@ void print_board(STATE *s);
 void print_solution(STATE *s);
 void choose_current();
 void expand_next(STATE *s);
+void A_Search();
+void BFS();
+void init_node(STATE *s,STATE *HEAD);
+void init_all();
+void insert_queue(STATE *l, STATE *s);
+
 void main()
 {
 	char str[10];
-	int i, state_count = 0;
+	int i = 0;
 
 	// input start state (ex> 1238x4765) 
 	printf("\n\n Start position : ");
@@ -56,7 +63,18 @@ void main()
 	start->g = 0;
 	start->h = compute_h(start);
 	start->f = start->g + start->h;
+	
+	type = 0;
+	//A_Search();
+	type = 1;
+	BFS();
 
+}
+
+
+void BFS()
+{
+	int state_count = 0;
 	// A* search 
 	insert(open_ptr, start);
 	while (open_ptr->next != NULL) {
@@ -73,19 +91,50 @@ void main()
 		// expand
 		// generate next states, check open and closed list, and insert children into open list
 		expand_next(current);
- 		//getch();
+		//getch();
 
 	}
 
 	// display search cost and path cost
 	printf("\n search cost = %d", state_count);
 	printf("\n path cost   = %d \n\n", current->g);
-	getchar();
+	getch();
 
 	// display solution path
 	print_solution(current);
-	getchar();
+	getch();
+}
+void A_Search()
+{
+	int state_count = 0;
+	// A* search 
+	insert(open_ptr, start);
+	while (open_ptr->next != NULL) {
+		state_count++;
 
+		// choose
+		// set current as the first state in open list and remove it from open list
+		choose_current();
+
+		// goal test
+		// if current = goal, stop 
+		if (is_same(current, goal))break;
+
+		// expand
+		// generate next states, check open and closed list, and insert children into open list
+		expand_next(current);
+		//getch();
+
+	}
+
+	// display search cost and path cost
+	printf("\n search cost = %d", state_count);
+	printf("\n path cost   = %d \n\n", current->g);
+	getch();
+
+	// display solution path
+	print_solution(current);
+	getch();
 }
 void expand_next(STATE *s) 
 {
@@ -273,12 +322,25 @@ int is_same(STATE *s1, STATE *s2)
 // insert state s to list l. list l is in sorted order
 void insert(STATE *l, STATE *s)
 {
-	while (l->next != NULL) {
-		if (s->f < l->next->f) break;
-		l = l->next;
+	if (type == 0)
+	{
+		while (l->next != NULL) {
+			if (s->f < l->next->f) break;
+			l = l->next;
+		}
+		s->next = l->next;
+		l->next = s;
 	}
-	s->next = l->next;
-	l->next = s;
+	else if (type == 1)
+	{
+		while (l->next != NULL)
+		{
+			if (s->g < l->next->g)break;
+			l = l->next;
+		}
+		
+
+	}
 }
 
 // print solution by display states sequentially from Start to Goal
@@ -286,7 +348,7 @@ void print_solution(STATE *s)
 {
 	if (s == NULL) return;
 	print_solution(s->parent);
-	getchar();
+	getch();
 	print_board(s);
 }
 
